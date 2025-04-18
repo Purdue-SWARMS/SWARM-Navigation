@@ -2,6 +2,12 @@ import airsimneurips
 import numpy as np
 import math
 
+"""
+This file contains the functions to convert coordinates in the NED system to coordinates in the ENU system, and vice
+versa.
+Doing so is necessary as the drone's coordinate system (NED) is different from the world's coordinate system (ENU).
+This allows us to determine the position of the drone with respect to its surroundings for efficient navigation. 
+"""
 
 # This establishes a connection between our Python script and the simulation environment.
 client = airsimneurips.MultirotorClient()
@@ -43,19 +49,12 @@ def get_ned_to_world_yaw(client, drone_name="drone_1"):
     yaw = quaternion_to_yaw(orientation)
     print(yaw)
 
-    # Subtract 90 degrees from the yaw
+    # Check the yaw value
     print(f" Rotated by (yaw): {np.degrees(yaw)}")
 
     # Compute the rotation matrix components
     cos_val = np.cos(yaw)
     sin_val = np.sin(yaw)
-
-    # print(f" Rotated by (yaw_rad): {np.degrees(yaw_rad)}")
-    print(f" Rotated by (yaw): {np.degrees(yaw)}")
-
-    # Convert radians to degrees
-    # cos_val = np.degrees(cos_val)
-    # sin_val = np.degrees(sin_val)
 
     # Define the rotation matrix (flipping the z-axis)
     R = np.array([
@@ -63,7 +62,6 @@ def get_ned_to_world_yaw(client, drone_name="drone_1"):
         [sin_val, cos_val, 0],
         [0, 0, -1]
     ])
-
 
     # Build the full 4x4 transformation matrix
     T = np.eye(4)
@@ -75,7 +73,7 @@ def get_ned_to_world_yaw(client, drone_name="drone_1"):
 
 def quaternion_to_pitch(q):
     """
-            Convert a quaternion to roll (rotation around Z-axis).
+            Convert a quaternion to pitch (rotation around Y-axis).
             The formula is:
             pitch = arcsin (2.0 * (w * y - z * x))
 
@@ -107,19 +105,12 @@ def get_ned_to_world_pitch(client, drone_name = "drone_1"):
     pitch = quaternion_to_pitch(orientation)
     print(pitch)
 
-    # Subtract 90 degrees from the pitch
+    # Check the pitch value
     print(f" Rotated by (pitch): {np.degrees(pitch)}")
 
     # Compute the rotation matrix components
     cos_val = np.cos(pitch)
     sin_val = np.sin(pitch)
-
-    # print(f" Rotated by (yaw_rad): {np.degrees(yaw_rad)}")
-    print(f" Rotated by (pitch): {np.degrees(pitch)}")
-
-    # Convert radians to degrees
-    # cos_val = np.degrees(cos_val)
-    # sin_val = np.degrees(sin_val)
 
     # Define the rotation matrix (flipping the z-axis)
     R = np.array([
@@ -165,19 +156,16 @@ def get_ned_to_world_roll(client, drone_name = "drone_1"):
     kinematics = client.simGetGroundTruthKinematics(vehicle_name=drone_name)
     # print(kinematics)
 
-    # Convert quaternion to yaw angle
+    # Convert quaternion to roll angle
     roll = quaternion_to_roll(orientation)
     print(roll)
 
-    # Subtract 90 degrees from the yaw
+    # Check the roll value
     print(f" Rotated by (roll): {np.degrees(roll)}")
 
     # Compute the rotation matrix components
     cos_val = np.cos(roll)
     sin_val = np.sin(roll)
-
-    # print(f" Rotated by (yaw_rad): {np.degrees(yaw_rad)}")
-    print(f" Rotated by (roll): {np.degrees(roll)}")
 
     # Convert radians to degrees
     # cos_val = np.degrees(cos_val)
@@ -196,9 +184,6 @@ def get_ned_to_world_roll(client, drone_name = "drone_1"):
     T[:3, 3] = [x, y, z]  # Insert the vector in the rightmost column
 
     return R, T
-
-
-#----------------------------------------------------------------------------------
 
 
 def roll_pitch_yaw_NTW_transform(client, drone_name = "drone_1"):
@@ -234,6 +219,7 @@ def roll_pitch_yaw_NTW_transform(client, drone_name = "drone_1"):
 def roll_pitch_yaw_WTN_transform(client, drone_name = "drone_1"):
     """
             Computes the inverse transformation matrix of NED to world.
+            Effectively computes the world to NED transformation matrix.
     """
 
     # Cal the NED to world transformation function
@@ -255,21 +241,22 @@ def roll_pitch_yaw_WTN_transform(client, drone_name = "drone_1"):
 
 
 
+# Test the functions
 
-
-# Test the function
-
+# Call the NED to world and world to NED functions to get the initial transformation matrices
 transform = roll_pitch_yaw_NTW_transform(client, drone_name="drone_1")
 inv_transform = roll_pitch_yaw_WTN_transform(client, drone_name="drone_1")
 print("NED to World Transformation Matrix before takeoff:")
 print(transform)
 print(inv_transform)
 
+# Enable the API
 client.enableApiControl(vehicle_name="drone_1")  # Enable API control for the drone
 client.arm(vehicle_name="drone_1")  # Arm the drone so it can take off
 client.simStartRace()  # Start the race
 client.takeoffAsync(vehicle_name="drone_1").join()
 
+# Move by specific roll, pitch, and yaw to compute the transformation matrices after rotation.
 client.moveByRollPitchYawZAsync(0, 0, np.radians(-90), -10, duration=10, vehicle_name="drone_1").join()
 client.moveByRollPitchYawZAsync(np.radians(90), np.radians(45), np.radians(-90), -10, duration=10, vehicle_name="drone_1").join()
 transform = roll_pitch_yaw_NTW_transform(client, drone_name="drone_1")
