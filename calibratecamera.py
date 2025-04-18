@@ -59,19 +59,3 @@ for i, fname in enumerate(images):
 ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
 
 cv.destroyAllWindows()
-
-
-# Image 1 = 7,6 (or 10,7 or 7,10 or 6,7)
-# Image 2 = 9,7 (or 4,4)
-# Image 3 = 8,7 (or 7,8)
-# Image 4 =
-# Image 5 =
-# Image 6 =
-# Image 7 = 10,6 (or 6,10)
-
-
-# Don't use (4,3), (4,9), (4,8), (4,7), (4,6), (4,5), (8,6), (8,5), (8,4) (8,3), (8,8) (8,9), (9,8), (9,6), (6,9), (9,10)
-#
-
-
-# Need to reduce window size for more accurate calibration of corners
